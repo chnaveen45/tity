@@ -67,7 +67,7 @@ function OrdersStack({ orders }) {
   );
 }
 
-export default function CustomerNavigator() {
+export default function CustomerNavigator({ onLogout }) {
   const [cartItems, setCartItems] = useState([]);
   const [wishlistIds, setWishlistIds] = useState(['4']);
   const [orders, setOrders] = useState(customerOrders);
@@ -200,7 +200,7 @@ export default function CustomerNavigator() {
             headerTintColor: COLORS.text,
           }}
         >
-          {(props) => <ProfileScreen {...props} orders={orders} />}
+          {(props) => <ProfileScreen {...props} orders={orders} onLogout={onLogout} />}
         </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>

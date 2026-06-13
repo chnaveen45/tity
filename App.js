@@ -64,11 +64,12 @@ function RoleSelectionScreen({ onSelectAdmin, onSelectCustomer }) {
 
 export default function App() {
   const [selectedRole, setSelectedRole] = useState(null);
+  const handleLogout = () => setSelectedRole(null);
 
   const content = selectedRole === 'admin'
-    ? <AdminNavigator />
+    ? <AdminNavigator onLogout={handleLogout} />
     : selectedRole === 'customer'
-      ? <CustomerNavigator />
+      ? <CustomerNavigator onLogout={handleLogout} />
       : (
         <RoleSelectionScreen
           onSelectAdmin={() => setSelectedRole('admin')}

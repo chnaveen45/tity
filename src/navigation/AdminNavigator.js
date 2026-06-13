@@ -80,10 +80,12 @@ function OrdersStack() {
   );
 }
 
-function MoreStack() {
+function MoreStack({ onLogout }) {
   return (
     <Stack.Navigator screenOptions={screenOptions}>
-      <Stack.Screen name="MoreMenu" component={MoreScreen} options={{ title: 'More' }} />
+      <Stack.Screen name="MoreMenu" options={{ title: 'More' }}>
+        {(props) => <MoreScreen {...props} onLogout={onLogout} />}
+      </Stack.Screen>
       <Stack.Screen name="Inventory" component={InventoryScreen} options={{ title: 'Inventory' }} />
       <Stack.Screen name="Categories" component={CategoryListScreen} options={{ title: 'Categories' }} />
       <Stack.Screen name="Transactions" component={TransactionsScreen} options={{ title: 'Transactions' }} />
@@ -95,7 +97,7 @@ function MoreStack() {
   );
 }
 
-function AdminTabs() {
+function AdminTabs({ onLogout }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -132,15 +134,17 @@ function AdminTabs() {
         component={UsersScreen}
         options={{ title: 'Users', headerShown: true, headerTitle: 'Users', headerStyle: screenOptions.headerStyle, headerTintColor: COLORS.text }}
       />
-      <Tab.Screen name="MoreTab" component={MoreStack} options={{ title: 'More' }} />
+      <Tab.Screen name="MoreTab" options={{ title: 'More' }}>
+        {() => <MoreStack onLogout={onLogout} />}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 }
 
-export default function AdminNavigator() {
+export default function AdminNavigator({ onLogout }) {
   return (
     <NavigationContainer>
-      <AdminTabs />
+      <AdminTabs onLogout={onLogout} />
     </NavigationContainer>
   );
 }

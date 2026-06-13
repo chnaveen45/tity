@@ -1,4 +1,4 @@
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, SPACING } from '../../constants/theme';
 import { customerProfile } from '../../data/customerData';
 import { formatCurrency, styles } from './customerStyles';
@@ -12,7 +12,7 @@ function DetailRow({ label, value }) {
   );
 }
 
-export default function ProfileScreen({ orders }) {
+export default function ProfileScreen({ orders, onLogout }) {
   const totalSpent = orders.reduce((total, order) => total + order.amount, 0);
 
   return (
@@ -35,6 +35,10 @@ export default function ProfileScreen({ orders }) {
         <DetailRow label="Total spent" value={formatCurrency(totalSpent)} />
         <DetailRow label="Latest order" value={orders[0]?.id || 'No orders yet'} />
       </View>
+
+      <TouchableOpacity style={styles.secondaryButton} onPress={onLogout} activeOpacity={0.7}>
+        <Text style={styles.secondaryButtonText}>Logout</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }

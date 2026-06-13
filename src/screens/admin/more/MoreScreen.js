@@ -13,7 +13,7 @@ const MENU_ITEMS = [
   { label: 'Settings', icon: 'settings-outline', screen: 'Settings' },
 ];
 
-export default function MoreScreen({ navigation }) {
+export default function MoreScreen({ navigation, onLogout }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <ScreenHeader title="More" subtitle="Additional admin tools" />
@@ -30,6 +30,16 @@ export default function MoreScreen({ navigation }) {
           <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
         </TouchableOpacity>
       ))}
+
+      <TouchableOpacity
+        style={styles.menuItem}
+        onPress={onLogout}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="log-out-outline" size={22} color={COLORS.primary} />
+        <Text style={styles.menuLabel}>Logout</Text>
+        <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+      </TouchableOpacity>
     </ScrollView>
   );
 }
