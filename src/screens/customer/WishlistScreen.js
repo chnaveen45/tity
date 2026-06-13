@@ -1,11 +1,10 @@
 import { FlatList, Pressable, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS, SPACING } from '../../constants/theme';
-import { customerProducts } from '../../data/customerData';
 import { formatCurrency, styles } from './customerStyles';
 
-export default function WishlistScreen({ wishlistIds, onAddToCart, onToggleWishlist }) {
-  const wishlistProducts = customerProducts.filter((product) => wishlistIds.includes(product.id));
+export default function WishlistScreen({ products, wishlistIds, onAddToCart, onToggleWishlist }) {
+  const wishlistProducts = products.filter((product) => wishlistIds.includes(product.id));
 
   return (
     <View style={styles.container}>

@@ -1,11 +1,10 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS, SPACING } from '../../constants/theme';
-import { customerProducts } from '../../data/customerData';
 import { formatCurrency, styles } from './customerStyles';
 
-export default function ProductDetailScreen({ route, wishlistIds, onAddToCart, onToggleWishlist }) {
-  const product = customerProducts.find((item) => item.id === route.params?.productId);
+export default function ProductDetailScreen({ route, products, wishlistIds, onAddToCart, onToggleWishlist }) {
+  const product = products.find((item) => item.id === route.params?.productId);
 
   if (!product) {
     return (

@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS } from '../constants/theme';
-import { customerOrders } from '../data/customerData';
+import { buildCustomerProducts, customerOrders } from '../data/customerData';
 
 import ProductCatalogScreen from '../screens/customer/ProductCatalogScreen';
 import ProductDetailScreen from '../screens/customer/ProductDetailScreen';
@@ -25,13 +25,14 @@ const screenOptions = {
   contentStyle: { backgroundColor: COLORS.background },
 };
 
-function ShopStack({ cartItems, wishlistIds, onAddToCart, onToggleWishlist }) {
+function ShopStack({ products, cartItems, wishlistIds, onAddToCart, onToggleWishlist }) {
   return (
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen name="ProductCatalog" options={{ title: 'Shop' }}>
         {(props) => (
           <ProductCatalogScreen
             {...props}
+            products={products}
             cartItems={cartItems}
             wishlistIds={wishlistIds}
             onAddToCart={onAddToCart}
@@ -43,6 +44,7 @@ function ShopStack({ cartItems, wishlistIds, onAddToCart, onToggleWishlist }) {
         {(props) => (
           <ProductDetailScreen
             {...props}
+            products={products}
             cartItems={cartItems}
             wishlistIds={wishlistIds}
             onAddToCart={onAddToCart}
@@ -67,10 +69,12 @@ function OrdersStack({ orders }) {
   );
 }
 
-export default function CustomerNavigator({ onLogout }) {
+export default function CustomerNavigator({ onLogout, products }) {
   const [cartItems, setCartItems] = useState([]);
   const [wishlistIds, setWishlistIds] = useState(['4']);
   const [orders, setOrders] = useState(customerOrders);
+
+  const customerProducts = useMemo(() => buildCustomerProducts(products), [products]);
 
   const cartCount = useMemo(
     () => cartItems.reduce((total, item) => total + item.qty, 0),
@@ -157,6 +161,7 @@ export default function CustomerNavigator({ onLogout }) {
         <Tab.Screen name="ShopTab" options={{ title: 'Shop' }}>
           {() => (
             <ShopStack
+              products={customerProducts}
               cartItems={cartItems}
               wishlistIds={wishlistIds}
               onAddToCart={handleAddToCart}
@@ -168,6 +173,7 @@ export default function CustomerNavigator({ onLogout }) {
           {(props) => (
             <WishlistScreen
               {...props}
+              products={customerProducts}
               wishlistIds={wishlistIds}
               onAddToCart={handleAddToCart}
               onToggleWishlist={handleToggleWishlist}

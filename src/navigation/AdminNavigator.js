@@ -1,10 +1,8 @@
-import { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS } from '../constants/theme';
-import { products as initialProducts } from '../data/mockData';
 
 import DashboardScreen from '../screens/admin/dashboard/DashboardScreen';
 import ProductListScreen from '../screens/admin/products/ProductListScreen';
@@ -32,25 +30,7 @@ const screenOptions = {
   contentStyle: { backgroundColor: COLORS.background },
 };
 
-function ProductsStack() {
-  const [products, setProducts] = useState(initialProducts);
-
-  const handleSaveProduct = (product) => {
-    setProducts((current) => {
-      const exists = current.some((item) => item.id === product.id);
-
-      if (exists) {
-        return current.map((item) => (item.id === product.id ? product : item));
-      }
-
-      return [product, ...current];
-    });
-  };
-
-  const handleDeleteProduct = (productId) => {
-    setProducts((current) => current.filter((item) => item.id !== productId));
-  };
-
+function ProductsStack({ products, onSaveProduct, onDeleteProduct }) {
   return (
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen name="ProductList" options={{ title: 'Products' }}>
@@ -61,8 +41,8 @@ function ProductsStack() {
           <ProductFormScreen
             {...props}
             products={products}
-            onSaveProduct={handleSaveProduct}
-            onDeleteProduct={handleDeleteProduct}
+            onSaveProduct={onSaveProduct}
+            onDeleteProduct={onDeleteProduct}
           />
         )}
       </Stack.Screen>
@@ -97,7 +77,7 @@ function MoreStack({ onLogout }) {
   );
 }
 
-function AdminTabs({ onLogout }) {
+function AdminTabs({ onLogout, products, onSaveProduct, onDeleteProduct }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -127,7 +107,15 @@ function AdminTabs({ onLogout }) {
         component={DashboardScreen}
         options={{ title: 'Dashboard', headerShown: true, headerStyle: screenOptions.headerStyle, headerTintColor: COLORS.text }}
       />
-      <Tab.Screen name="ProductsTab" component={ProductsStack} options={{ title: 'Products' }} />
+      <Tab.Screen name="ProductsTab" options={{ title: 'Products' }}>
+        {() => (
+          <ProductsStack
+            products={products}
+            onSaveProduct={onSaveProduct}
+            onDeleteProduct={onDeleteProduct}
+          />
+        )}
+      </Tab.Screen>
       <Tab.Screen name="OrdersTab" component={OrdersStack} options={{ title: 'Orders' }} />
       <Tab.Screen
         name="UsersTab"
@@ -141,10 +129,15 @@ function AdminTabs({ onLogout }) {
   );
 }
 
-export default function AdminNavigator({ onLogout }) {
+export default function AdminNavigator({ onLogout, products, onSaveProduct, onDeleteProduct }) {
   return (
     <NavigationContainer>
-      <AdminTabs onLogout={onLogout} />
+      <AdminTabs
+        onLogout={onLogout}
+        products={products}
+        onSaveProduct={onSaveProduct}
+        onDeleteProduct={onDeleteProduct}
+      />
     </NavigationContainer>
   );
 }

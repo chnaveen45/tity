@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AdminNavigator from './src/navigation/AdminNavigator';
 import CustomerNavigator from './src/navigation/CustomerNavigator';
 import { COLORS, RADIUS, SPACING } from './src/constants/theme';
+import { products as initialProducts } from './src/data/mockData';
 
 function RoleButton({ label, onPress, variant = 'primary' }) {
   const isPrimary = variant === 'primary';
@@ -64,12 +65,36 @@ function RoleSelectionScreen({ onSelectAdmin, onSelectCustomer }) {
 
 export default function App() {
   const [selectedRole, setSelectedRole] = useState(null);
+  const [products, setProducts] = useState(initialProducts);
   const handleLogout = () => setSelectedRole(null);
 
+  const handleSaveProduct = (product) => {
+    setProducts((current) => {
+      const exists = current.some((item) => item.id === product.id);
+
+      if (exists) {
+        return current.map((item) => (item.id === product.id ? product : item));
+      }
+
+      return [product, ...current];
+    });
+  };
+
+  const handleDeleteProduct = (productId) => {
+    setProducts((current) => current.filter((item) => item.id !== productId));
+  };
+
   const content = selectedRole === 'admin'
-    ? <AdminNavigator onLogout={handleLogout} />
+    ? (
+      <AdminNavigator
+        onLogout={handleLogout}
+        products={products}
+        onSaveProduct={handleSaveProduct}
+        onDeleteProduct={handleDeleteProduct}
+      />
+    )
     : selectedRole === 'customer'
-      ? <CustomerNavigator onLogout={handleLogout} />
+      ? <CustomerNavigator onLogout={handleLogout} products={products} />
       : (
         <RoleSelectionScreen
           onSelectAdmin={() => setSelectedRole('admin')}

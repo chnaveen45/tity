@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { COLORS, RADIUS, SPACING } from '../../constants/theme';
-import { customerCategories, customerProducts } from '../../data/customerData';
+import { categories } from '../../data/mockData';
 import { formatCurrency, styles } from './customerStyles';
 
 function CategoryChip({ category, selected, onPress }) {
@@ -68,14 +68,18 @@ function ProductCard({ product, isWishlisted, onOpen, onAddToCart, onToggleWishl
   );
 }
 
-export default function ProductCatalogScreen({ navigation, wishlistIds, onAddToCart, onToggleWishlist }) {
+export default function ProductCatalogScreen({ navigation, products, wishlistIds, onAddToCart, onToggleWishlist }) {
   const [query, setQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const customerCategories = useMemo(
+    () => [{ id: 'all', name: 'All', productCount: products.length }, ...categories],
+    [products.length]
+  );
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return customerProducts.filter((product) => {
+    return products.filter((product) => {
       const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
       const matchesQuery = !normalizedQuery
         || product.name.toLowerCase().includes(normalizedQuery)
@@ -83,7 +87,7 @@ export default function ProductCatalogScreen({ navigation, wishlistIds, onAddToC
 
       return matchesCategory && matchesQuery;
     });
-  }, [query, selectedCategory]);
+  }, [products, query, selectedCategory]);
 
   return (
     <View style={styles.container}>
