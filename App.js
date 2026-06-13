@@ -70,20 +70,33 @@ const emptyCustomerForm = {
   password: '',
 };
 
-function CustomerAuthScreen({ mode, form, onChangeField, onRegister, onLogin, error }) {
+function CustomerAuthScreen({
+  mode,
+  form,
+  onChangeField,
+  onRegister,
+  onLogin,
+  onShowLogin,
+  onShowRegister,
+  error,
+}) {
   const isRegistering = mode === 'register';
 
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: COLORS.background }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
     >
       <ScrollView
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           flexGrow: 1,
           justifyContent: 'center',
           padding: SPACING.xl,
+          paddingBottom: SPACING.xl * 2,
           gap: SPACING.lg,
         }}
       >
@@ -143,6 +156,36 @@ function CustomerAuthScreen({ mode, form, onChangeField, onRegister, onLogin, er
             label={isRegistering ? 'Register' : 'Login'}
             onPress={isRegistering ? onRegister : onLogin}
           />
+
+          {isRegistering && (
+            <Pressable
+              onPress={onShowLogin}
+              style={({ pressed }) => ({
+                alignItems: 'center',
+                paddingVertical: SPACING.sm,
+                opacity: pressed ? 0.72 : 1,
+              })}
+            >
+              <Text style={{ color: COLORS.primary, fontSize: 15, fontWeight: '700' }}>
+                Already have an account? Login
+              </Text>
+            </Pressable>
+          )}
+
+          {!isRegistering && (
+            <Pressable
+              onPress={onShowRegister}
+              style={({ pressed }) => ({
+                alignItems: 'center',
+                paddingVertical: SPACING.sm,
+                opacity: pressed ? 0.72 : 1,
+              })}
+            >
+              <Text style={{ color: COLORS.primary, fontSize: 15, fontWeight: '700' }}>
+                New customer? Register
+              </Text>
+            </Pressable>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -206,6 +249,16 @@ export default function App() {
     setAuthError('');
   };
 
+  const handleShowCustomerLogin = () => {
+    setCustomerAuthMode('login');
+    setAuthError('');
+  };
+
+  const handleShowCustomerRegister = () => {
+    setCustomerAuthMode('register');
+    setAuthError('');
+  };
+
   const handleCustomerLogin = () => {
     const email = customerForm.email.trim().toLowerCase();
 
@@ -257,6 +310,8 @@ export default function App() {
             onChangeField={handleCustomerFieldChange}
             onRegister={handleRegisterCustomer}
             onLogin={handleCustomerLogin}
+            onShowLogin={handleShowCustomerLogin}
+            onShowRegister={handleShowCustomerRegister}
             error={authError}
           />
         )
