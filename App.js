@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AdminNavigator from './src/navigation/AdminNavigator';
+import CustomerNavigator from './src/navigation/CustomerNavigator';
 import { COLORS, RADIUS, SPACING } from './src/constants/theme';
 
 function RoleButton({ label, onPress, variant = 'primary' }) {
@@ -61,32 +62,13 @@ function RoleSelectionScreen({ onSelectAdmin, onSelectCustomer }) {
   );
 }
 
-function CustomerGreetingScreen() {
-  return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: COLORS.background,
-        justifyContent: 'center',
-        padding: SPACING.xl,
-        gap: SPACING.md,
-      }}
-    >
-      <Text style={{ color: COLORS.text, fontSize: 32, fontWeight: '800' }}>Welcome, Customer!</Text>
-      <Text style={{ color: COLORS.textSecondary, fontSize: 17, lineHeight: 25 }}>
-        Great to have you here.
-      </Text>
-    </View>
-  );
-}
-
 export default function App() {
   const [selectedRole, setSelectedRole] = useState(null);
 
   const content = selectedRole === 'admin'
     ? <AdminNavigator />
     : selectedRole === 'customer'
-      ? <CustomerGreetingScreen />
+      ? <CustomerNavigator />
       : (
         <RoleSelectionScreen
           onSelectAdmin={() => setSelectedRole('admin')}
