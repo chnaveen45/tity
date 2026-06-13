@@ -12,21 +12,26 @@ function DetailRow({ label, value }) {
   );
 }
 
-export default function ProfileScreen({ orders, onLogout }) {
+export default function ProfileScreen({ orders, onLogout, customer }) {
   const totalSpent = orders.reduce((total, order) => total + order.amount, 0);
+  const profile = {
+    ...customerProfile,
+    ...customer,
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.card}>
-        <Text style={styles.title}>{customerProfile.name}</Text>
-        <Text style={styles.subtitle}>{customerProfile.email}</Text>
+        <Text style={styles.title}>{profile.name}</Text>
+        <Text style={styles.subtitle}>{profile.email}</Text>
       </View>
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Personal details</Text>
-        <DetailRow label="Customer ID" value={customerProfile.id} />
-        <DetailRow label="Phone" value={customerProfile.phone} />
-        <DetailRow label="Address" value={customerProfile.address} />
+        <DetailRow label="Customer ID" value={profile.id} />
+        <DetailRow label="Age" value={profile.age || 'Not added'} />
+        <DetailRow label="Phone" value={profile.phone} />
+        <DetailRow label="Address" value={profile.address} />
       </View>
 
       <View style={styles.card}>

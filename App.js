@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Pressable, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AdminNavigator from './src/navigation/AdminNavigator';
 import CustomerNavigator from './src/navigation/CustomerNavigator';
@@ -63,10 +63,164 @@ function RoleSelectionScreen({ onSelectAdmin, onSelectCustomer }) {
   );
 }
 
+const emptyCustomerForm = {
+  name: '',
+  age: '',
+  email: '',
+  password: '',
+};
+
+function CustomerAuthScreen({ mode, form, onChangeField, onRegister, onLogin, error }) {
+  const isRegistering = mode === 'register';
+
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: COLORS.background }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'center',
+          padding: SPACING.xl,
+          gap: SPACING.lg,
+        }}
+      >
+        <View style={{ gap: SPACING.sm }}>
+          <Text style={{ color: COLORS.text, fontSize: 30, fontWeight: '800' }}>
+            {isRegistering ? 'Customer Registration' : 'Customer Login'}
+          </Text>
+          <Text style={{ color: COLORS.textSecondary, fontSize: 16, lineHeight: 24 }}>
+            {isRegistering
+              ? 'Create your customer account before opening the dashboard.'
+              : 'Login with your registered customer email and password.'}
+          </Text>
+        </View>
+
+        <View style={{ gap: SPACING.md }}>
+          {isRegistering && (
+            <>
+              <TextInput
+                value={form.name}
+                onChangeText={(value) => onChangeField('name', value)}
+                placeholder="Name"
+                placeholderTextColor={COLORS.textSecondary}
+                style={authStyles.input}
+              />
+              <TextInput
+                value={form.age}
+                onChangeText={(value) => onChangeField('age', value)}
+                placeholder="Age"
+                placeholderTextColor={COLORS.textSecondary}
+                keyboardType="number-pad"
+                style={authStyles.input}
+              />
+            </>
+          )}
+
+          <TextInput
+            value={form.email}
+            onChangeText={(value) => onChangeField('email', value)}
+            placeholder="Email"
+            placeholderTextColor={COLORS.textSecondary}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            style={authStyles.input}
+          />
+          <TextInput
+            value={form.password}
+            onChangeText={(value) => onChangeField('password', value)}
+            placeholder="Password"
+            placeholderTextColor={COLORS.textSecondary}
+            secureTextEntry
+            style={authStyles.input}
+          />
+
+          {error ? <Text style={{ color: COLORS.danger, fontWeight: '700' }}>{error}</Text> : null}
+
+          <RoleButton
+            label={isRegistering ? 'Register' : 'Login'}
+            onPress={isRegistering ? onRegister : onLogin}
+          />
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+const authStyles = {
+  input: {
+    backgroundColor: COLORS.surface,
+    borderColor: COLORS.border,
+    borderWidth: 1,
+    borderRadius: RADIUS.sm,
+    color: COLORS.text,
+    fontSize: 16,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 14,
+  },
+};
+
 export default function App() {
   const [selectedRole, setSelectedRole] = useState(null);
   const [products, setProducts] = useState(initialProducts);
-  const handleLogout = () => setSelectedRole(null);
+  const [customerAuthMode, setCustomerAuthMode] = useState('register');
+  const [customerForm, setCustomerForm] = useState(emptyCustomerForm);
+  const [registeredCustomer, setRegisteredCustomer] = useState(null);
+  const [authError, setAuthError] = useState('');
+
+  const handleLogout = () => {
+    setSelectedRole(null);
+    setAuthError('');
+  };
+
+  const handleCustomerFieldChange = (field, value) => {
+    setCustomerForm((current) => ({ ...current, [field]: value }));
+    setAuthError('');
+  };
+
+  const handleSelectCustomer = () => {
+    setSelectedRole('customerAuth');
+    setCustomerAuthMode('register');
+    setCustomerForm(emptyCustomerForm);
+    setAuthError('');
+  };
+
+  const handleRegisterCustomer = () => {
+    const nextCustomer = {
+      name: customerForm.name.trim(),
+      age: customerForm.age.trim(),
+      email: customerForm.email.trim().toLowerCase(),
+      password: customerForm.password,
+    };
+
+    if (!nextCustomer.name || !nextCustomer.age || !nextCustomer.email || !nextCustomer.password) {
+      setAuthError('Please fill name, age, email, and password.');
+      return;
+    }
+
+    setRegisteredCustomer(nextCustomer);
+    setCustomerForm({ ...emptyCustomerForm, email: nextCustomer.email });
+    setCustomerAuthMode('login');
+    setAuthError('');
+  };
+
+  const handleCustomerLogin = () => {
+    const email = customerForm.email.trim().toLowerCase();
+
+    if (
+      registeredCustomer
+      && email === registeredCustomer.email
+      && customerForm.password === registeredCustomer.password
+    ) {
+      setSelectedRole('customer');
+      setAuthError('');
+      return;
+    }
+
+    setAuthError('Invalid customer email or password.');
+  };
 
   const handleSaveProduct = (product) => {
     setProducts((current) => {
@@ -94,11 +248,22 @@ export default function App() {
       />
     )
     : selectedRole === 'customer'
-      ? <CustomerNavigator onLogout={handleLogout} products={products} />
+      ? <CustomerNavigator onLogout={handleLogout} products={products} customer={registeredCustomer} />
+      : selectedRole === 'customerAuth'
+        ? (
+          <CustomerAuthScreen
+            mode={customerAuthMode}
+            form={customerForm}
+            onChangeField={handleCustomerFieldChange}
+            onRegister={handleRegisterCustomer}
+            onLogin={handleCustomerLogin}
+            error={authError}
+          />
+        )
       : (
         <RoleSelectionScreen
           onSelectAdmin={() => setSelectedRole('admin')}
-          onSelectCustomer={() => setSelectedRole('customer')}
+          onSelectCustomer={handleSelectCustomer}
         />
       );
 

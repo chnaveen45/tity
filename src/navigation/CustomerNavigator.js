@@ -28,7 +28,7 @@ const screenOptions = {
 function ShopStack({ products, cartItems, wishlistIds, onAddToCart, onToggleWishlist }) {
   return (
     <Stack.Navigator screenOptions={screenOptions}>
-      <Stack.Screen name="ProductCatalog" options={{ title: 'Shop' }}>
+      <Stack.Screen name="ProductCatalog" options={{ title: 'Dashboard' }}>
         {(props) => (
           <ProductCatalogScreen
             {...props}
@@ -69,7 +69,7 @@ function OrdersStack({ orders }) {
   );
 }
 
-export default function CustomerNavigator({ onLogout, products }) {
+export default function CustomerNavigator({ onLogout, products, customer }) {
   const [cartItems, setCartItems] = useState([]);
   const [wishlistIds, setWishlistIds] = useState(['4']);
   const [orders, setOrders] = useState(customerOrders);
@@ -158,7 +158,7 @@ export default function CustomerNavigator({ onLogout, products }) {
           },
         })}
       >
-        <Tab.Screen name="ShopTab" options={{ title: 'Shop' }}>
+        <Tab.Screen name="ShopTab" options={{ title: 'Dashboard' }}>
           {() => (
             <ShopStack
               products={customerProducts}
@@ -206,7 +206,7 @@ export default function CustomerNavigator({ onLogout, products }) {
             headerTintColor: COLORS.text,
           }}
         >
-          {(props) => <ProfileScreen {...props} orders={orders} onLogout={onLogout} />}
+          {(props) => <ProfileScreen {...props} orders={orders} onLogout={onLogout} customer={customer} />}
         </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>
