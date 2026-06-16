@@ -1,22 +1,71 @@
-import { useState } from 'react';
-import { ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { COLORS, SPACING, RADIUS } from '../../../constants/theme';
 import { categories } from '../../../data/mockData';
 import ScreenHeader from '../../../components/admin/ScreenHeader';
+import { createProduct, deleteProduct, getProduct, updateProduct } from './productApi';
 
-export default function ProductFormScreen({ route, navigation, products, onSaveProduct, onDeleteProduct }) {
+export default function ProductFormScreen({ route, navigation, products = [], onSaveProduct, onDeleteProduct }) {
   const productId = route.params?.productId;
-  const existing = products.find((product) => product.id === productId);
-  const isEdit = !!existing;
+  const routeProduct = route.params?.product;
+  const [existing, setExisting] = useState(routeProduct || products.find((product) => product.id === productId));
+  const isEdit = !!productId;
 
   const [name, setName] = useState(existing?.name || '');
   const [category, setCategory] = useState(existing?.category || categories[0].name);
   const [price, setPrice] = useState(existing?.price?.toString() || '');
-  const [stock, setStock] = useState(existing?.stock?.toString() || '');
-  const [status, setStatus] = useState(existing?.status || 'active');
+  const [stock, setStock] = useState(existing?.stockQuantity?.toString() || existing?.stock?.toString() || '');
+  const [status, setStatus] = useState(existing?.status || 'Active');
   const [description, setDescription] = useState(existing?.description || '');
+  const [isLoading, setIsLoading] = useState(!!productId && !existing);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSave = () => {
+  useEffect(() => {
+    if (!productId) {
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadProduct() {
+      setIsLoading(true);
+
+      try {
+        const product = await getProduct(productId);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setExisting(product);
+        setName(product.name || '');
+        setCategory(product.category || categories[0].name);
+        setPrice(product.price?.toString() || '');
+        setStock(product.stockQuantity?.toString() || product.stock?.toString() || '');
+        setStatus(product.status || 'Active');
+        setDescription(product.description || '');
+        setError('');
+      } catch (loadError) {
+        if (isMounted) {
+          setError(loadError.message || 'Unable to load product details.');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadProduct();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [productId]);
+
+  const handleSave = async () => {
     const parsedPrice = Number(price);
     const parsedStock = Number(stock || 0);
 
@@ -30,19 +79,33 @@ export default function ProductFormScreen({ route, navigation, products, onSaveP
       return;
     }
 
-    onSaveProduct({
-      id: existing?.id || String(Date.now()),
+    const productPayload = {
       name: name.trim(),
       category,
       price: parsedPrice,
-      stock: parsedStock,
+      stockQuantity: parsedStock,
       status,
       description: description.trim(),
-    });
+    };
 
-    Alert.alert('Success', `Product ${isEdit ? 'updated' : 'added'} successfully.`, [
-      { text: 'OK', onPress: () => navigation.goBack() },
-    ]);
+    setIsSaving(true);
+    setError('');
+
+    try {
+      const savedProduct = isEdit
+        ? await updateProduct(productId, productPayload)
+        : await createProduct(productPayload);
+
+      onSaveProduct?.(savedProduct);
+
+      Alert.alert('Success', `Product ${isEdit ? 'updated' : 'added'} successfully.`, [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
+    } catch (saveError) {
+      setError(saveError.message || `Unable to ${isEdit ? 'update' : 'add'} product.`);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDelete = () => {
@@ -51,9 +114,19 @@ export default function ProductFormScreen({ route, navigation, products, onSaveP
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => {
-          onDeleteProduct(existing.id);
-          navigation.goBack();
+        onPress: async () => {
+          setIsDeleting(true);
+          setError('');
+
+          try {
+            await deleteProduct(productId);
+            onDeleteProduct?.(productId);
+            navigation.goBack();
+          } catch (deleteError) {
+            setError(deleteError.message || 'Unable to delete product.');
+          } finally {
+            setIsDeleting(false);
+          }
         },
       },
     ]);
@@ -66,63 +139,76 @@ export default function ProductFormScreen({ route, navigation, products, onSaveP
         subtitle={isEdit ? 'Update product details' : 'Create a new listing'}
       />
 
-      <Text style={styles.label}>Product Name</Text>
-      <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Enter product name" />
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-      <Text style={styles.label}>Category</Text>
-      <View style={styles.chipRow}>
-        {categories.map((cat) => (
-          <TouchableOpacity
-            key={cat.id}
-            style={[styles.chip, category === cat.name && styles.chipActive]}
-            onPress={() => setCategory(cat.name)}
-          >
-            <Text style={[styles.chipText, category === cat.name && styles.chipTextActive]}>
-              {cat.name}
+      {isLoading ? (
+        <View style={styles.loading}>
+          <ActivityIndicator color={COLORS.primary} />
+          <Text style={styles.loadingText}>Loading product...</Text>
+        </View>
+      ) : (
+        <>
+          <Text style={styles.label}>Product Name</Text>
+          <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Enter product name" />
+
+          <Text style={styles.label}>Category</Text>
+          <View style={styles.chipRow}>
+            {categories.map((cat) => (
+              <TouchableOpacity
+                key={cat.id}
+                style={[styles.chip, category === cat.name && styles.chipActive]}
+                onPress={() => setCategory(cat.name)}
+              >
+                <Text style={[styles.chipText, category === cat.name && styles.chipTextActive]}>
+                  {cat.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Text style={styles.label}>Price (Rs.)</Text>
+          <TextInput style={styles.input} value={price} onChangeText={setPrice} keyboardType="numeric" placeholder="0" />
+
+          <Text style={styles.label}>Stock Quantity</Text>
+          <TextInput style={styles.input} value={stock} onChangeText={setStock} keyboardType="numeric" placeholder="0" />
+
+          <Text style={styles.label}>Status</Text>
+          <View style={styles.chipRow}>
+            {['Active', 'Inactive'].map((option) => (
+              <TouchableOpacity
+                key={option}
+                style={[styles.chip, status === option && styles.chipActive]}
+                onPress={() => setStatus(option)}
+              >
+                <Text style={[styles.chipText, status === option && styles.chipTextActive]}>
+                  {option}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Text style={styles.label}>Description</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="Product description"
+            multiline
+            numberOfLines={4}
+          />
+
+          <TouchableOpacity style={[styles.saveBtn, isSaving && styles.disabledBtn]} onPress={handleSave} disabled={isSaving || isDeleting}>
+            <Text style={styles.saveBtnText}>
+              {isSaving ? 'Saving...' : isEdit ? 'Update Product' : 'Add Product'}
             </Text>
           </TouchableOpacity>
-        ))}
-      </View>
 
-      <Text style={styles.label}>Price (Rs.)</Text>
-      <TextInput style={styles.input} value={price} onChangeText={setPrice} keyboardType="numeric" placeholder="0" />
-
-      <Text style={styles.label}>Stock Quantity</Text>
-      <TextInput style={styles.input} value={stock} onChangeText={setStock} keyboardType="numeric" placeholder="0" />
-
-      <Text style={styles.label}>Status</Text>
-      <View style={styles.chipRow}>
-        {['active', 'inactive'].map((option) => (
-          <TouchableOpacity
-            key={option}
-            style={[styles.chip, status === option && styles.chipActive]}
-            onPress={() => setStatus(option)}
-          >
-            <Text style={[styles.chipText, status === option && styles.chipTextActive]}>
-              {option === 'active' ? 'Active' : 'Inactive'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <Text style={styles.label}>Description</Text>
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        value={description}
-        onChangeText={setDescription}
-        placeholder="Product description"
-        multiline
-        numberOfLines={4}
-      />
-
-      <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-        <Text style={styles.saveBtnText}>{isEdit ? 'Update Product' : 'Add Product'}</Text>
-      </TouchableOpacity>
-
-      {isEdit && (
-        <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
-          <Text style={styles.deleteBtnText}>Remove Listing</Text>
-        </TouchableOpacity>
+          {isEdit && (
+            <TouchableOpacity style={[styles.deleteBtn, isDeleting && styles.disabledBtn]} onPress={handleDelete} disabled={isSaving || isDeleting}>
+              <Text style={styles.deleteBtnText}>{isDeleting ? 'Removing...' : 'Remove Listing'}</Text>
+            </TouchableOpacity>
+          )}
+        </>
       )}
     </ScrollView>
   );
@@ -143,6 +229,21 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: SPACING.sm,
     marginTop: SPACING.md,
+  },
+  errorText: {
+    color: COLORS.danger,
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: SPACING.md,
+  },
+  loading: {
+    alignItems: 'center',
+    gap: SPACING.sm,
+    padding: SPACING.xl,
+  },
+  loadingText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
   },
   input: {
     backgroundColor: COLORS.surface,
@@ -189,6 +290,9 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     alignItems: 'center',
     marginTop: SPACING.lg,
+  },
+  disabledBtn: {
+    opacity: 0.65,
   },
   saveBtnText: {
     color: '#FFF',
