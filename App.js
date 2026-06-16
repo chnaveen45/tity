@@ -70,6 +70,37 @@ const emptyCustomerForm = {
   password: '',
 };
 
+const CUSTOMER_AUTH_BASE_URL = "http://192.168.1.18:5000/api/auth";
+
+async function postCustomerAuth(path, payload) {
+  try {
+    const response = await fetch(
+      `${CUSTOMER_AUTH_BASE_URL}${path}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data?.message || "Customer authentication failed."
+      );
+    }
+
+    return data;
+  } catch (error) {
+    throw new Error(
+      error.message || "Unable to reach the customer auth server."
+    );
+  }
+}
+
 function CustomerAuthScreen({
   mode,
   form,
@@ -230,7 +261,7 @@ export default function App() {
     setAuthError('');
   };
 
-  const handleRegisterCustomer = () => {
+  const handleRegisterCustomer = async () => {
     const nextCustomer = {
       name: customerForm.name.trim(),
       age: customerForm.age.trim(),
@@ -243,10 +274,15 @@ export default function App() {
       return;
     }
 
-    setRegisteredCustomer(nextCustomer);
-    setCustomerForm({ ...emptyCustomerForm, email: nextCustomer.email });
-    setCustomerAuthMode('login');
-    setAuthError('');
+    try {
+      const data = await postCustomerAuth('/register', nextCustomer);
+      setRegisteredCustomer(data?.customer || data?.user || nextCustomer);
+      setCustomerForm({ ...emptyCustomerForm, email: nextCustomer.email });
+      setCustomerAuthMode('login');
+      setAuthError('');
+    } catch (error) {
+      setAuthError(error.message);
+    }
   };
 
   const handleShowCustomerLogin = () => {
@@ -259,20 +295,25 @@ export default function App() {
     setAuthError('');
   };
 
-  const handleCustomerLogin = () => {
-    const email = customerForm.email.trim().toLowerCase();
+  const handleCustomerLogin = async () => {
+    const credentials = {
+      email: customerForm.email.trim().toLowerCase(),
+      password: customerForm.password,
+    };
 
-    if (
-      registeredCustomer
-      && email === registeredCustomer.email
-      && customerForm.password === registeredCustomer.password
-    ) {
-      setSelectedRole('customer');
-      setAuthError('');
+    if (!credentials.email || !credentials.password) {
+      setAuthError('Please enter email and password.');
       return;
     }
 
-    setAuthError('Invalid customer email or password.');
+    try {
+      const data = await postCustomerAuth('/login', credentials);
+      setRegisteredCustomer(data?.customer || data?.user || { email: credentials.email });
+      setSelectedRole('customer');
+      setAuthError('');
+    } catch (error) {
+      setAuthError(error.message);
+    }
   };
 
   const handleSaveProduct = (product) => {
